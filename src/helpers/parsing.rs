@@ -51,3 +51,10 @@ text_parser_for_unsigned_int!(text_usize for usize);
 pub fn line_ending_or_eof<'a, E: ParseError<&'a [u8]>>() -> impl Parser<&'a [u8], &'a [u8], E> {
     alt((line_ending, eof))
 }
+
+pub fn generic_error_for_input<'a, T>(input: &'a [u8]) -> Result<T, nom::Err<nom::error::Error<&'a [u8]>>> {
+    Err(nom::Err::Error(nom::error::Error {
+        input,
+        code: nom::error::ErrorKind::Fail,
+    }))
+}
