@@ -1,11 +1,12 @@
-use std::{marker::PhantomData, fmt::Debug};
 use std::str;
+use std::{fmt::Debug, marker::PhantomData};
 
+use nom::combinator::{iterator, ParserIterator};
 use nom::{
-    bytes::complete::take_while1,
-    character::{is_digit, complete::line_ending},
-    combinator::{all_consuming, map_res, eof},
     branch::alt,
+    bytes::complete::take_while1,
+    character::{complete::line_ending, is_digit},
+    combinator::{all_consuming, eof, map_res},
     error::{Error, ParseError},
     multi::many0,
     Err, Parser,
@@ -32,6 +33,16 @@ pub fn parse_all<'a, T: AocParsable>(input: &'a [u8]) -> Result<Vec<T>, Err<Erro
     all_consuming(many0(parser))(input).map(|(_, result)| result)
 }
 
+pub fn iterate_all<'a, T: AocParsable>(
+    input: &'a [u8],
+) -> ParserIterator<
+    &[u8],
+    Error<&'a [u8]>,
+    fn(&'a [u8]) -> Result<(&'a [u8], T), nom::Err<nom::error::Error<&'a [u8]>>>,
+> {
+    iterator(input, T::parse_from_string)
+}
+
 macro_rules! text_parser_for_unsigned_int {
     ($name:ident for $utype:ty) => {
         pub fn $name<'a>() -> impl Parser<&'a [u8], $utype, Error<&'a [u8]>> {
@@ -52,7 +63,9 @@ pub fn line_ending_or_eof<'a, E: ParseError<&'a [u8]>>() -> impl Parser<&'a [u8]
     alt((line_ending, eof))
 }
 
-pub fn generic_error_for_input<'a, T>(input: &'a [u8]) -> Result<T, nom::Err<nom::error::Error<&'a [u8]>>> {
+pub fn generic_error_for_input<'a, T>(
+    input: &'a [u8],
+) -> Result<T, nom::Err<nom::error::Error<&'a [u8]>>> {
     Err(nom::Err::Error(nom::error::Error {
         input,
         code: nom::error::ErrorKind::Fail,

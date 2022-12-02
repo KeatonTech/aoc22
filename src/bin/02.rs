@@ -1,4 +1,4 @@
-use advent_of_code::helpers::parsing::{line_ending_or_eof, parse_all, AocParsable, generic_error_for_input};
+use advent_of_code::helpers::parsing::{line_ending_or_eof, AocParsable, generic_error_for_input, iterate_all};
 use nom::{
     character::complete::{one_of, space1},
     sequence::{separated_pair, terminated},
@@ -97,9 +97,7 @@ impl AocParsable for PartOneRound {
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    let rounds: Vec<PartOneRound> = parse_all(input.as_bytes()).unwrap();
-    rounds
-        .into_iter()
+    iterate_all::<PartOneRound>(input.as_bytes())
         .map(|round| round.my_score() as u32)
         .reduce(|a, b| a + b)
 }
@@ -140,10 +138,8 @@ impl AocParsable for PartTwoRound {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let rounds: Vec<PartTwoRound> = parse_all(input.as_bytes()).unwrap();
-    rounds
-        .into_iter()
-        .map(|round| round.my_score() as u32)
+    iterate_all(input.as_bytes())
+        .map(|round: PartTwoRound| round.my_score() as u32)
         .reduce(|a, b| a + b)
 }
 
