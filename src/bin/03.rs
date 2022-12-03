@@ -1,12 +1,10 @@
 use advent_of_code::helpers::parsing::{
-    iterate_all, line_ending_or_eof, AocLineParsable, AocParsable,
+    iterate_all, line_ending_or_eof, AocLineParsable, AocParsable, generic_error_for_input,
 };
 use fixedbitset::FixedBitSet;
 use nom::{
-    character::complete::one_of,
     multi::{fold_many1, many1},
     sequence::{terminated, tuple},
-    Parser,
 };
 
 #[derive(Debug)]
@@ -15,14 +13,21 @@ struct Rucksack {
     right: FixedBitSet,
 }
 
-fn parse_rucksack_item<'a>() -> impl Parser<&'a [u8], u8, nom::error::Error<&'a [u8]>> {
-    one_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").map(|c| {
-        if c >= 'a' && c <= 'z' {
-            c as u8 - 'a' as u8 + 1
-        } else {
-            c as u8 - 'A' as u8 + 27
-        }
-    })
+fn parse_rucksack_item<'a>(
+    input: &'a [u8],
+) -> Result<(&'a [u8], u8), nom::Err<nom::error::Error<&'a [u8]>>> {
+    if input.len() == 0 {
+        return generic_error_for_input(input);
+    }
+
+    let c = input[0] as char;
+    if c >= 'a' && c <= 'z' {
+        Ok((&input[1..], c as u8 - 'a' as u8 + 1))
+    } else if c >= 'A' && c <= 'Z' {
+        Ok((&input[1..], c as u8 - 'A' as u8 + 27))
+    } else {
+        generic_error_for_input(input)
+    }
 }
 
 fn bit_set_from_items<'a>(rucksack_items: &'a [u8]) -> FixedBitSet {
@@ -37,7 +42,7 @@ impl AocLineParsable for Rucksack {
     fn parse_from_line<'a>(
         input: &'a [u8],
     ) -> Result<(&'a [u8], Self), nom::Err<nom::error::Error<&'a [u8]>>> {
-        let (rest, items) = many1(parse_rucksack_item())(input)?;
+        let (rest, items) = many1(parse_rucksack_item)(input)?;
         let (first_half, second_half) = items.split_at(items.len() >> 1);
         Ok((
             rest,
@@ -72,7 +77,7 @@ impl AocLineParsable for ElfPocket {
         input: &'a [u8],
     ) -> Result<(&'a [u8], Self), nom::Err<nom::error::Error<&'a [u8]>>> {
         let (rest, bitset) = fold_many1(
-            parse_rucksack_item(),
+            parse_rucksack_item,
             || FixedBitSet::with_capacity(53),
             |mut set, item| {
                 set.insert(item as usize);
