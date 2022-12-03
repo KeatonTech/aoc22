@@ -1,13 +1,14 @@
 [package]
 name = "advent_of_code"
 version = "0.8.0"
-authors = ["Felix Spöttel <1682504+fspoettel@users.noreply.github.com>"]
+authors = ["Keaton Brandt <keaton.brandt@gmail.com>"]
 edition = "2021"
 default-run = "advent_of_code"
 publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+fixedbitset = "0.4.2"
 nom = "7.1.1"
 num_enum = "0.5.7"
 pico-args = "0.5.0"

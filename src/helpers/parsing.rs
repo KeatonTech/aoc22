@@ -2,6 +2,7 @@ use std::str;
 use std::{fmt::Debug, marker::PhantomData};
 
 use nom::combinator::{iterator, ParserIterator};
+use nom::sequence::terminated;
 use nom::{
     branch::alt,
     bytes::complete::take_while1,
@@ -14,6 +15,16 @@ use nom::{
 
 pub trait AocParsable: Sized + Debug {
     fn parse_from_string<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>>;
+}
+
+pub trait AocLineParsable: Sized + Debug {
+    fn parse_from_line<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>>;
+}
+
+impl <T: AocLineParsable> AocParsable for T {
+    fn parse_from_string<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>> {
+        terminated(Self::parse_from_line, line_ending_or_eof())(input)
+    }
 }
 
 pub struct AocParser<T: AocParsable> {
