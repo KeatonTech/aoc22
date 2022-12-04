@@ -13,16 +13,18 @@ use nom::{
     Err, Parser,
 };
 
+pub type ParsingError<'a> = nom::Err<nom::error::Error<&'a [u8]>>;
+
 pub trait AocParsable: Sized + Debug {
-    fn parse_from_string<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>>;
+    fn parse_from_string(input: &[u8]) -> Result<(&[u8], Self), ParsingError>;
 }
 
 pub trait AocLineParsable: Sized + Debug {
-    fn parse_from_line<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>>;
+    fn parse_from_line(input: &[u8]) -> Result<(&[u8], Self), ParsingError>;
 }
 
 impl <T: AocLineParsable> AocParsable for T {
-    fn parse_from_string<'a>(input: &'a [u8]) -> Result<(&'a [u8], Self), Err<Error<&'a [u8]>>> {
+    fn parse_from_string(input: &[u8]) -> Result<(&[u8], Self), ParsingError> {
         terminated(Self::parse_from_line, line_ending_or_eof())(input)
     }
 }
@@ -37,19 +39,19 @@ impl<'a, T: AocParsable> Parser<&'a [u8], T, Error<&'a [u8]>> for AocParser<T> {
     }
 }
 
-pub fn parse_all<'a, T: AocParsable>(input: &'a [u8]) -> Result<Vec<T>, Err<Error<&'a [u8]>>> {
+pub fn parse_all<T: AocParsable>(input: &[u8]) -> Result<Vec<T>, Err<Error<&[u8]>>> {
     let parser = AocParser {
         output: PhantomData,
     };
     all_consuming(many0(parser))(input).map(|(_, result)| result)
 }
 
-pub fn iterate_all<'a, T: AocParsable>(
-    input: &'a [u8],
+pub fn iterate_all<T: AocParsable>(
+    input: &[u8],
 ) -> ParserIterator<
     &[u8],
-    Error<&'a [u8]>,
-    fn(&'a [u8]) -> Result<(&'a [u8], T), nom::Err<nom::error::Error<&'a [u8]>>>,
+    Error<&[u8]>,
+    fn(&[u8]) -> Result<(&[u8], T), ParsingError>,
 > {
     iterator(input, T::parse_from_string)
 }
@@ -58,7 +60,7 @@ macro_rules! text_parser_for_unsigned_int {
     ($name:ident for $utype:ty) => {
         pub fn $name<'a>() -> impl Parser<&'a [u8], $utype, Error<&'a [u8]>> {
             map_res(take_while1(is_digit), |digit_str: &'a [u8]| {
-                <$utype>::from_str_radix(str::from_utf8(digit_str).unwrap(), 10)
+                str::from_utf8(digit_str).unwrap().parse::<$utype>()
             })
         }
     };
@@ -74,9 +76,9 @@ pub fn line_ending_or_eof<'a, E: ParseError<&'a [u8]>>() -> impl Parser<&'a [u8]
     alt((line_ending, eof))
 }
 
-pub fn generic_error_for_input<'a, T>(
-    input: &'a [u8],
-) -> Result<T, nom::Err<nom::error::Error<&'a [u8]>>> {
+pub fn generic_error_for_input<T>(
+    input: &[u8],
+) -> Result<T, ParsingError> {
     Err(nom::Err::Error(nom::error::Error {
         input,
         code: nom::error::ErrorKind::Fail,

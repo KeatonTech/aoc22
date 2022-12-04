@@ -1,5 +1,5 @@
 use advent_of_code::helpers::parsing::{
-    iterate_all, line_ending_or_eof, AocLineParsable, AocParsable, generic_error_for_input,
+    iterate_all, line_ending_or_eof, AocLineParsable, AocParsable, generic_error_for_input, ParsingError,
 };
 use fixedbitset::FixedBitSet;
 use nom::{
@@ -13,35 +13,35 @@ struct Rucksack {
     right: FixedBitSet,
 }
 
-fn parse_rucksack_item<'a>(
-    input: &'a [u8],
-) -> Result<(&'a [u8], u8), nom::Err<nom::error::Error<&'a [u8]>>> {
-    if input.len() == 0 {
+fn parse_rucksack_item(
+    input: &[u8],
+) -> Result<(&[u8], u8), ParsingError> {
+    if input.is_empty() {
         return generic_error_for_input(input);
     }
 
     let c = input[0] as char;
-    if c >= 'a' && c <= 'z' {
-        Ok((&input[1..], c as u8 - 'a' as u8 + 1))
-    } else if c >= 'A' && c <= 'Z' {
-        Ok((&input[1..], c as u8 - 'A' as u8 + 27))
+    if ('a'..='z').contains(&c) {
+        Ok((&input[1..], c as u8 - b'a' + 1))
+    } else if ('A'..='Z').contains(&c) {
+        Ok((&input[1..], c as u8 - b'A' + 27))
     } else {
         generic_error_for_input(input)
     }
 }
 
-fn bit_set_from_items<'a>(rucksack_items: &'a [u8]) -> FixedBitSet {
+fn bit_set_from_items(rucksack_items: &[u8]) -> FixedBitSet {
     let mut bitset = FixedBitSet::with_capacity(53);
     for item in rucksack_items {
         bitset.insert((*item).into())
     }
-    return bitset;
+    bitset
 }
 
 impl AocLineParsable for Rucksack {
-    fn parse_from_line<'a>(
-        input: &'a [u8],
-    ) -> Result<(&'a [u8], Self), nom::Err<nom::error::Error<&'a [u8]>>> {
+    fn parse_from_line(
+        input: &[u8],
+    ) -> Result<(&[u8], Self), ParsingError> {
         let (rest, items) = many1(parse_rucksack_item)(input)?;
         let (first_half, second_half) = items.split_at(items.len() >> 1);
         Ok((
@@ -73,9 +73,9 @@ pub fn part_one(input: &str) -> Option<u32> {
 struct ElfPocket(FixedBitSet);
 
 impl AocLineParsable for ElfPocket {
-    fn parse_from_line<'a>(
-        input: &'a [u8],
-    ) -> Result<(&'a [u8], Self), nom::Err<nom::error::Error<&'a [u8]>>> {
+    fn parse_from_line(
+        input: &[u8],
+    ) -> Result<(&[u8], Self), ParsingError> {
         let (rest, bitset) = fold_many1(
             parse_rucksack_item,
             || FixedBitSet::with_capacity(53),
@@ -92,15 +92,15 @@ impl AocLineParsable for ElfPocket {
 struct ElfGroup([ElfPocket; 3]);
 
 impl AocParsable for ElfGroup {
-    fn parse_from_string<'a>(
-        input: &'a [u8],
-    ) -> Result<(&'a [u8], Self), nom::Err<nom::error::Error<&'a [u8]>>> {
+    fn parse_from_string(
+        input: &[u8],
+    ) -> Result<(&[u8], Self), nom::Err<nom::error::Error<&[u8]>>> {
         let (rest, (elf1, elf2, elf3)) = tuple((
             terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
             terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
             terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
         ))(input)?;
-        return Ok((rest, ElfGroup([elf1, elf2, elf3])));
+        Ok((rest, ElfGroup([elf1, elf2, elf3])))
     }
 }
 
