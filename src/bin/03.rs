@@ -20,11 +20,11 @@ fn parse_rucksack_item(
         return generic_error_for_input(input);
     }
 
-    let c = input[0] as char;
-    if ('a'..='z').contains(&c) {
-        Ok((&input[1..], c as u8 - b'a' + 1))
-    } else if ('A'..='Z').contains(&c) {
-        Ok((&input[1..], c as u8 - b'A' + 27))
+    let c = input[0];
+    if c >= b'a' && c <= b'z' {
+        Ok((&input[1..], c - b'a' + 1))
+    } else if c >= b'A' && c <= b'Z' {
+        Ok((&input[1..], c - b'A' + 27))
     } else {
         generic_error_for_input(input)
     }
@@ -124,7 +124,6 @@ pub fn part_two(input: &str) -> Option<u32> {
 
 fn main() {
     let input = &advent_of_code::read_file("inputs", 3);
-    advent_of_code::solve!(1, part_one, input);
     advent_of_code::solve!(2, part_two, input);
 }
 
