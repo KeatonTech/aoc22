@@ -1,39 +1,67 @@
 use advent_of_code::helpers::parsing::{
     iterate_all, line_ending_or_eof, AocLineParsable, AocParsable, generic_error_for_input, ParsingError,
 };
-use fixedbitset::FixedBitSet;
 use nom::{
     multi::{fold_many1, many1},
     sequence::{terminated, tuple},
 };
 
 #[derive(Debug)]
-struct Rucksack {
-    left: FixedBitSet,
-    right: FixedBitSet,
+struct RucksackBitSet(u64);
+
+impl RucksackBitSet {
+    fn new() -> Self {
+        RucksackBitSet(0)
+    }
+
+    fn add(&mut self, value: u8) {
+        self.0 |= 1 << value;
+    }
+
+    fn intersect(&mut self, other: Self) -> &mut Self {
+        self.0 &= other.0;
+        self
+    }
+
+    fn get_first(&self) -> u8 {
+        self.0.trailing_zeros() as u8
+    }
 }
 
-fn parse_rucksack_item(
+#[derive(Debug)]
+struct Rucksack {
+    left: RucksackBitSet,
+    right: RucksackBitSet,
+}
+
+fn parse_rucksack(
     input: &[u8],
-) -> Result<(&[u8], u8), ParsingError> {
+) -> Result<(&[u8], RucksackBitSet), ParsingError> {
     if input.is_empty() {
         return generic_error_for_input(input);
     }
 
-    let c = input[0];
-    if c >= b'a' && c <= b'z' {
-        Ok((&input[1..], c - b'a' + 1))
-    } else if c >= b'A' && c <= b'Z' {
-        Ok((&input[1..], c - b'A' + 27))
-    } else {
-        generic_error_for_input(input)
+    let mut rucksack_bit_set = RucksackBitSet::new();
+    let mut i = 0;
+    while input[i] != b'\n' {
+        let c = input[i];
+        if c >= b'a' && c <= b'z' {
+            rucksack_bit_set.add(c - b'a' + 1);
+        } else if c >= b'A' && c <= b'Z' {
+            rucksack_bit_set.add(c - b'A' + 27);
+        } else {
+            return generic_error_for_input(input)
+        }
+        i += 1;
     }
+
+    return Ok((&input[i + 1..], rucksack_bit_set));
 }
 
-fn bit_set_from_items(rucksack_items: &[u8]) -> FixedBitSet {
-    let mut bitset = FixedBitSet::with_capacity(53);
+fn bit_set_from_items(rucksack_items: &[u8]) -> RucksackBitSet {
+    let mut bitset = RucksackBitSet::new();
     for item in rucksack_items {
-        bitset.insert((*item).into())
+        bitset.add((*item).into());
     }
     bitset
 }
@@ -42,48 +70,29 @@ impl AocLineParsable for Rucksack {
     fn parse_from_line(
         input: &[u8],
     ) -> Result<(&[u8], Self), ParsingError> {
-        let (rest, items) = many1(parse_rucksack_item)(input)?;
-        let (first_half, second_half) = items.split_at(items.len() >> 1);
-        Ok((
-            rest,
-            Rucksack {
-                left: bit_set_from_items(first_half),
-                right: bit_set_from_items(second_half),
-            },
-        ))
+        let (rest, result) = parse_rucksack(input)?;
+        Ok((rest, Rucksack{left: result, right: RucksackBitSet(0)}))
     }
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
     Some(
         iterate_all(input.as_bytes())
-            .map(|rucksack: Rucksack| {
-                let mut intersection = rucksack.left.intersection(&rucksack.right);
-                let item = intersection
-                    .next()
-                    .expect("Sides must have one intersection");
-                assert_eq!(intersection.next(), None);
-                item as u32
+            .map(|mut rucksack: Rucksack| {
+                rucksack.left.intersect(rucksack.right).get_first() as u32
             })
             .sum(),
     )
 }
 
 #[derive(Debug)]
-struct ElfPocket(FixedBitSet);
+struct ElfPocket(RucksackBitSet);
 
 impl AocLineParsable for ElfPocket {
     fn parse_from_line(
         input: &[u8],
     ) -> Result<(&[u8], Self), ParsingError> {
-        let (rest, bitset) = fold_many1(
-            parse_rucksack_item,
-            || FixedBitSet::with_capacity(53),
-            |mut set, item| {
-                set.insert(item as usize);
-                set
-            },
-        )(input)?;
+        let (rest, bitset) = parse_rucksack(input)?;
         Ok((rest, ElfPocket(bitset)))
     }
 }
@@ -96,9 +105,9 @@ impl AocParsable for ElfGroup {
         input: &[u8],
     ) -> Result<(&[u8], Self), nom::Err<nom::error::Error<&[u8]>>> {
         let (rest, (elf1, elf2, elf3)) = tuple((
-            terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
-            terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
-            terminated(ElfPocket::parse_from_line, line_ending_or_eof()),
+            ElfPocket::parse_from_line,
+            ElfPocket::parse_from_line,
+            ElfPocket::parse_from_line,
         ))(input)?;
         Ok((rest, ElfGroup([elf1, elf2, elf3])))
     }
@@ -108,15 +117,10 @@ pub fn part_two(input: &str) -> Option<u32> {
     Some(
         iterate_all(input.as_bytes())
             .map(|elf_group: ElfGroup| {
-                let mut intersection_set = elf_group.0[0].0.clone();
-                intersection_set.intersect_with(&elf_group.0[1].0);
-                intersection_set.intersect_with(&elf_group.0[2].0);
-                let mut intersection_iter = intersection_set.ones();
-                let priority = intersection_iter
-                    .next()
-                    .expect("Must have at least one intersection");
-                assert_eq!(intersection_iter.next(), None);
-                priority as u32
+                let [mut elf_group_1, elf_group_2, elf_group_3] = elf_group.0;
+                elf_group_1.0.intersect(elf_group_2.0);
+                elf_group_1.0.intersect(elf_group_3.0);
+                elf_group_1.0.get_first() as u32
             })
             .sum(),
     )
