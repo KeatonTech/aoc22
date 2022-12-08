@@ -15,6 +15,8 @@ use nom::{
 
 pub type ParsingError<'a> = nom::Err<nom::error::Error<&'a [u8]>>;
 
+pub type ParsingResult<'a, O> = Result<(&'a [u8], O), ParsingError<'a>>;
+
 pub trait AocParsable: Sized + Debug {
     fn parse_from_string(input: &[u8]) -> Result<(&[u8], Self), ParsingError>;
 }
