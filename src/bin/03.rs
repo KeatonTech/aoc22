@@ -1,9 +1,8 @@
 use advent_of_code::helpers::parsing::{
-    iterate_all, line_ending_or_eof, AocLineParsable, AocParsable, generic_error_for_input, ParsingError,
+    iterate_all, AocLineParsable, AocParsable, generic_error_for_input, ParsingError,
 };
 use nom::{
-    multi::{fold_many1, many1},
-    sequence::{terminated, tuple},
+    sequence::tuple,
 };
 
 #[derive(Debug)]
@@ -28,12 +27,6 @@ impl RucksackBitSet {
     }
 }
 
-#[derive(Debug)]
-struct Rucksack {
-    left: RucksackBitSet,
-    right: RucksackBitSet,
-}
-
 fn parse_rucksack(
     input: &[u8],
 ) -> Result<(&[u8], RucksackBitSet), ParsingError> {
@@ -56,33 +49,6 @@ fn parse_rucksack(
     }
 
     return Ok((&input[i + 1..], rucksack_bit_set));
-}
-
-fn bit_set_from_items(rucksack_items: &[u8]) -> RucksackBitSet {
-    let mut bitset = RucksackBitSet::new();
-    for item in rucksack_items {
-        bitset.add((*item).into());
-    }
-    bitset
-}
-
-impl AocLineParsable for Rucksack {
-    fn parse_from_line(
-        input: &[u8],
-    ) -> Result<(&[u8], Self), ParsingError> {
-        let (rest, result) = parse_rucksack(input)?;
-        Ok((rest, Rucksack{left: result, right: RucksackBitSet(0)}))
-    }
-}
-
-pub fn part_one(input: &str) -> Option<u32> {
-    Some(
-        iterate_all(input.as_bytes())
-            .map(|mut rucksack: Rucksack| {
-                rucksack.left.intersect(rucksack.right).get_first() as u32
-            })
-            .sum(),
-    )
 }
 
 #[derive(Debug)]
