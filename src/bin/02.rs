@@ -1,4 +1,6 @@
-use advent_of_code::helpers::parsing::{line_ending_or_eof, AocParsable, generic_error_for_input, iterate_all};
+use advent_of_code::helpers::parsing::{
+    generic_error_for_input, iterate_all, line_ending_or_eof, AocParsable,
+};
 use nom::{
     character::complete::{one_of, space1},
     sequence::{separated_pair, terminated},

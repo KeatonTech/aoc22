@@ -1,9 +1,7 @@
 use advent_of_code::helpers::parsing::{
-    iterate_all, AocLineParsable, AocParsable, generic_error_for_input, ParsingError,
+    generic_error_for_input, iterate_all, AocLineParsable, AocParsable, ParsingError,
 };
-use nom::{
-    sequence::tuple,
-};
+use nom::sequence::tuple;
 
 #[derive(Debug)]
 struct RucksackBitSet(u64);
@@ -27,9 +25,7 @@ impl RucksackBitSet {
     }
 }
 
-fn parse_rucksack(
-    input: &[u8],
-) -> Result<(&[u8], RucksackBitSet), ParsingError> {
+fn parse_rucksack(input: &[u8]) -> Result<(&[u8], RucksackBitSet), ParsingError> {
     if input.is_empty() {
         return generic_error_for_input(input);
     }
@@ -43,7 +39,7 @@ fn parse_rucksack(
         } else if c >= b'A' && c <= b'Z' {
             rucksack_bit_set.add(c - b'A' + 27);
         } else {
-            return generic_error_for_input(input)
+            return generic_error_for_input(input);
         }
         i += 1;
     }
@@ -55,9 +51,7 @@ fn parse_rucksack(
 struct ElfPocket(RucksackBitSet);
 
 impl AocLineParsable for ElfPocket {
-    fn parse_from_line(
-        input: &[u8],
-    ) -> Result<(&[u8], Self), ParsingError> {
+    fn parse_from_line(input: &[u8]) -> Result<(&[u8], Self), ParsingError> {
         let (rest, bitset) = parse_rucksack(input)?;
         Ok((rest, ElfPocket(bitset)))
     }

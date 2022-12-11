@@ -50,9 +50,9 @@ impl<'a, const MARKER_SIZE: u8> StartMarkerIndexIterator<'a, MARKER_SIZE> {
         if self.ringbuffer.len() < 2 {
             return None;
         }
-        (0..self.ringbuffer.len()).rev().find(|&i| {
-            !bit_set.insert(self.ringbuffer[i].into())
-        })
+        (0..self.ringbuffer.len())
+            .rev()
+            .find(|&i| !bit_set.insert(self.ringbuffer[i].into()))
     }
 }
 

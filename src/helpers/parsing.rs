@@ -25,7 +25,7 @@ pub trait AocLineParsable: Sized + Debug {
     fn parse_from_line(input: &[u8]) -> Result<(&[u8], Self), ParsingError>;
 }
 
-impl <T: AocLineParsable> AocParsable for T {
+impl<T: AocLineParsable> AocParsable for T {
     fn parse_from_string(input: &[u8]) -> Result<(&[u8], Self), ParsingError> {
         terminated(Self::parse_from_line, line_ending_or_eof())(input)
     }
@@ -50,11 +50,7 @@ pub fn parse_all<T: AocParsable>(input: &[u8]) -> Result<Vec<T>, Err<Error<&[u8]
 
 pub fn iterate_all<T: AocParsable>(
     input: &[u8],
-) -> ParserIterator<
-    &[u8],
-    Error<&[u8]>,
-    fn(&[u8]) -> Result<(&[u8], T), ParsingError>,
-> {
+) -> ParserIterator<&[u8], Error<&[u8]>, fn(&[u8]) -> Result<(&[u8], T), ParsingError>> {
     iterator(input, T::parse_from_string)
 }
 
@@ -78,9 +74,7 @@ pub fn line_ending_or_eof<'a, E: ParseError<&'a [u8]>>() -> impl Parser<&'a [u8]
     alt((line_ending, eof))
 }
 
-pub fn generic_error_for_input<T>(
-    input: &[u8],
-) -> Result<T, ParsingError> {
+pub fn generic_error_for_input<T>(input: &[u8]) -> Result<T, ParsingError> {
     Err(nom::Err::Error(nom::error::Error {
         input,
         code: nom::error::ErrorKind::Fail,
