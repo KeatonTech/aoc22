@@ -19,7 +19,7 @@ impl AocParsable for ElfBaggage {
 fn elf_totals(elf_baggages: Vec<ElfBaggage>) -> impl Iterator<Item = u32> {
     elf_baggages
         .into_iter()
-        .map(|eb| eb.items.into_iter().reduce(|a, b| a + b).unwrap())
+        .map(|eb| eb.items.into_iter().sum::<u32>())
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
