@@ -16,22 +16,22 @@ impl<I: Iterator> AocIteratorExtensions for I {
         self.fold([Default::default(); K], |mut acc, item| {
             let maybe_insert_at_index = match acc.binary_search(&item) {
                 Ok(index) => {
-                    if acc[K - 1] == item {
+                    if acc[0] == item {
                         None
                     } else {
                         Some(index)
                     }
                 }
                 Err(index) => {
-                    if index == K {
+                    if index == 0 {
                         None
                     } else {
-                        Some(index)
+                        Some(index - 1)
                     }
                 }
             };
             if let Some(insert_at_index) = maybe_insert_at_index {
-                acc[insert_at_index..].rotate_right(1);
+                acc[..insert_at_index + 1].rotate_left(1);
                 acc[insert_at_index] = item;
             }
             acc

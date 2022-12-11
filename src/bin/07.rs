@@ -6,11 +6,7 @@ use nom::{
     sequence::{preceded, separated_pair, terminated},
     Parser,
 };
-use petgraph::{
-    graph::NodeIndex,
-    visit::EdgeRef,
-    Direction,
-};
+use petgraph::{graph::NodeIndex, visit::EdgeRef, Direction};
 
 // PARSING
 
