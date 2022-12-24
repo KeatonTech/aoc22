@@ -70,6 +70,27 @@ text_parser_for_unsigned_int!(text_u32 for u32);
 text_parser_for_unsigned_int!(text_u64 for u64);
 text_parser_for_unsigned_int!(text_usize for usize);
 
+#[inline]
+pub fn is_sign_or_digit(chr: u8) -> bool {
+  (0x30..=0x39).contains(&chr) || chr == b'-'
+}
+
+macro_rules! text_parser_for_signed_int {
+    ($name:ident for $itype:ty) => {
+        pub fn $name<'a>() -> impl Parser<&'a [u8], $itype, Error<&'a [u8]>> {
+            map_res(take_while1(is_sign_or_digit), |digit_str: &'a [u8]| {
+                str::from_utf8(digit_str).unwrap().parse::<$itype>()
+            })
+        }
+    };
+}
+
+text_parser_for_signed_int!(text_i8 for i8);
+text_parser_for_signed_int!(text_i16 for i16);
+text_parser_for_signed_int!(text_i32 for i32);
+text_parser_for_signed_int!(text_i64 for i64);
+text_parser_for_signed_int!(text_isize for isize);
+
 pub fn line_ending_or_eof<'a, E: ParseError<&'a [u8]>>() -> impl Parser<&'a [u8], &'a [u8], E> {
     alt((line_ending, eof))
 }
